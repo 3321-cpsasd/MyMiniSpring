@@ -1,16 +1,20 @@
 package com.pix.service;
 
 import com.mySpring.BeanPostProcessor;
+import com.mySpring.Component;
 
-public class myPreProcessor implements BeanPostProcessor {
+@Component("myPreProcessor")
+public class MyPreProcessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessorBeforeInitialization(Object bean, String beanName) {
-        return null;
+        System.out.println(1);
+        return bean;
     }
 
     @Override
     public Object postProcessorAfterInitialization(Object bean, String beanName) {
-        return null;
+        System.out.println(2);
+        return bean;
     }
 }

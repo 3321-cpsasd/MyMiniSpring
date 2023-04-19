@@ -4,12 +4,14 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MyApplicationContext {
     private Class configClass;
     private ConcurrentHashMap<String,Object> singletonObjects = new ConcurrentHashMap<>();//单例池
     private ConcurrentHashMap<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(); //bean的定义
+    private List<BeanPostProcessor> beanPostProcessorList = new ArrayList<>();
     /*
     * */
     public MyApplicationContext(Class configClass) throws ClassNotFoundException {
@@ -50,10 +52,18 @@ public class MyApplicationContext {
             if(instance instanceof BeanNameAware){
                 ((BeanNameAware) instance).setBeanName(beanName);
             }
+
+            for(BeanPostProcessor beanPostProcessor : beanPostProcessorList){
+                instance = beanPostProcessor.postProcessorBeforeInitialization(instance, beanName);
+                instance = beanPostProcessor.postProcessorAfterInitialization(instance, beanName);
+            }
+
             //
             if(instance instanceof InitializingBean){
                 ((InitializingBean) instance).afterPropertiesSet();
             }
+
+
             return instance;
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -96,6 +106,13 @@ public class MyApplicationContext {
                         Class<?> clazz = classLoader.loadClass(className);
 
                         if(clazz.isAnnotationPresent(Component.class)){
+                            if(BeanPostProcessor.class.isAssignableFrom(clazz)){
+                                BeanPostProcessor instance = (BeanPostProcessor) clazz.getDeclaredConstructor().newInstance();
+                                beanPostProcessorList.add(instance);
+                            }
+
+
+
                             //表示这个类是一个Bean
                             //需要解析当前Bean类型: singleton or prototype -->BeanDefinition
                             Component componentAnnotation = clazz.getAnnotation(Component.class);
@@ -114,6 +131,14 @@ public class MyApplicationContext {
                         }
                     }catch (ClassNotFoundException e){
                         e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    } catch (InstantiationException e) {
+                        throw new RuntimeException(e);
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    } catch (NoSuchMethodException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
