@@ -54,11 +54,10 @@ public class MyApplicationContext {
             }
 
             for(BeanPostProcessor beanPostProcessor : beanPostProcessorList){
-                instance = beanPostProcessor.postProcessorBeforeInitialization(instance, beanName);
                 instance = beanPostProcessor.postProcessorAfterInitialization(instance, beanName);
             }
 
-            //
+            //初始化后
             if(instance instanceof InitializingBean){
                 ((InitializingBean) instance).afterPropertiesSet();
             }
